@@ -1,3 +1,10 @@
+"""
+Example functions to pass to Claude 3.7
+All metric functions have input validation using 
+the validate inputs function.
+"""
+
+
 import numpy as np
 import warnings
 
