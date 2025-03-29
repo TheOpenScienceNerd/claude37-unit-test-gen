@@ -1,7 +1,12 @@
 """
-Example functions to pass to Claude 3.7
-All metric functions have input validation using 
-the validate inputs function.
+Example functions to pass to Claude 3.7 Sonnet
+
+Please note that all functions have
+
+1. Type hints
+2. Docstrings
+3. Validation for input parameters.
+
 """
 
 
