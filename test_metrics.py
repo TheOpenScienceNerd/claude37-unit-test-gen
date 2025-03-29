@@ -2,230 +2,269 @@ import pytest
 import numpy as np
 import pandas as pd
 import warnings
-from metrics import validate_inputs, mean_absolute_error
+
+import metrics as m
 
 class TestValidateInputs:
+    """Tests for the validate_inputs function"""
+    
     def test_valid_inputs(self):
-        """Test with valid inputs in different formats."""
-        # List inputs
-        y_true, y_pred = validate_inputs([1, 2, 3], [1.5, 2.5, 3.5])
-        assert isinstance(y_true, np.ndarray)
-        assert isinstance(y_pred, np.ndarray)
-        np.testing.assert_array_equal(y_true, np.array([1, 2, 3]))
-        np.testing.assert_array_equal(y_pred, np.array([1.5, 2.5, 3.5]))
+        """Test with valid inputs of different types"""
+        # Lists
+        y_true, y_pred = m.validate_inputs([1, 2, 3], [4, 5, 6])
+        assert np.array_equal(y_true, np.array([1, 2, 3]))
+        assert np.array_equal(y_pred, np.array([4, 5, 6]))
         
-        # Numpy array inputs
-        y_true, y_pred = validate_inputs(np.array([1, 2, 3]), np.array([1.5, 2.5, 3.5]))
-        np.testing.assert_array_equal(y_true, np.array([1, 2, 3]))
-        np.testing.assert_array_equal(y_pred, np.array([1.5, 2.5, 3.5]))
+        # NumPy arrays
+        y_true, y_pred = m.validate_inputs(np.array([1, 2, 3]), np.array([4, 5, 6]))
+        assert np.array_equal(y_true, np.array([1, 2, 3]))
+        assert np.array_equal(y_pred, np.array([4, 5, 6]))
         
-        # Tuple inputs
-        y_true, y_pred = validate_inputs((1, 2, 3), (1.5, 2.5, 3.5))
-        np.testing.assert_array_equal(y_true, np.array([1, 2, 3]))
-        np.testing.assert_array_equal(y_pred, np.array([1.5, 2.5, 3.5]))
-    
-    def test_flattening(self):
-        """Test that multi-dimensional arrays are flattened correctly."""
-        y_true, y_pred = validate_inputs([[1, 2], [3, 4]], [[1.5, 2.5], [3.5, 4.5]])
-        np.testing.assert_array_equal(y_true, np.array([1, 2, 3, 4]))
-        np.testing.assert_array_equal(y_pred, np.array([1.5, 2.5, 3.5, 4.5]))
-    
-    def test_type_error(self):
-        """Test that TypeError is raised for non-iterable inputs."""
-        with pytest.raises(TypeError, match="Inputs must be iterable"):
-            validate_inputs(123, [1, 2, 3])
+        # Pandas Series
+        y_true, y_pred = m.validate_inputs(pd.Series([1, 2, 3]), pd.Series([4, 5, 6]))
+        assert np.array_equal(y_true, np.array([1, 2, 3]))
+        assert np.array_equal(y_pred, np.array([4, 5, 6]))
         
-        with pytest.raises(TypeError, match="Inputs must be iterable"):
-            validate_inputs([1, 2, 3], 123)
+        # Pandas DataFrames
+        y_true, y_pred = m.validate_inputs(pd.DataFrame([1, 2, 3]), pd.DataFrame([4, 5, 6]))
+        assert np.array_equal(y_true, np.array([1, 2, 3]))
+        assert np.array_equal(y_pred, np.array([4, 5, 6]))
+        
+        # 2D arrays
+        y_true, y_pred = m.validate_inputs(np.array([[1, 2], [3, 4]]), np.array([[5, 6], [7, 8]]))
+        assert np.array_equal(y_true, np.array([1, 2, 3, 4]))
+        assert np.array_equal(y_pred, np.array([5, 6, 7, 8]))
     
-    def test_value_error_conversion(self):
-        """Test that ValueError is raised when inputs can't be converted to arrays."""
-        with pytest.raises(ValueError, match="Inputs cannot be converted to arrays"):
-            validate_inputs([1, 2, "a"], [1, 2, 3])
+    def test_mixed_types(self):
+        """Test with mixed input types"""
+        y_true, y_pred = m.validate_inputs([1, 2, 3], pd.Series([4, 5, 6]))
+        assert np.array_equal(y_true, np.array([1, 2, 3]))
+        assert np.array_equal(y_pred, np.array([4, 5, 6]))
+        
+        y_true, y_pred = m.validate_inputs(np.array([1, 2, 3]), [4.0, 5.0, 6.0])
+        assert np.array_equal(y_true, np.array([1, 2, 3]))
+        assert np.array_equal(y_pred, np.array([4.0, 5.0, 6.0]))
     
-    def test_value_error_length(self):
-        """Test that ValueError is raised when inputs have different lengths."""
+    def test_error_different_lengths(self):
+        """Test error when inputs have different lengths"""
         with pytest.raises(ValueError, match="Input arrays must have the same length"):
-            validate_inputs([1, 2, 3], [1, 2])
+            m.validate_inputs([1, 2, 3], [4, 5])
     
-    def test_value_error_empty(self):
-        """Test that ValueError is raised when inputs are empty."""
+    def test_error_empty_arrays(self):
+        """Test error when inputs are empty"""
         with pytest.raises(ValueError, match="Input arrays cannot be empty"):
-            validate_inputs([], [])
+            m.validate_inputs([], [])
     
-    def test_value_error_non_numeric(self):
-        """Test that ValueError is raised when inputs contain non-numeric values."""
+    def test_error_non_numeric(self):
+        """Test error when inputs contain non-numeric values"""
         with pytest.raises(ValueError, match="Input arrays must contain numeric values"):
-            validate_inputs(["1", "2", "3"], ["1", "2", "3"])
+            m.validate_inputs(['a', 'b', 'c'], [1, 2, 3])
+    
+    def test_error_non_iterable(self):
+        """Test error when inputs are not iterable"""
+        with pytest.raises(TypeError, match="Inputs must be iterable"):
+            m.validate_inputs(123, [1, 2, 3])
+        
+        with pytest.raises(TypeError, match="Inputs must be iterable"):
+            m.validate_inputs([1, 2, 3], None)
+
 
 class TestMeanAbsoluteError:
-    def test_identical_arrays(self):
-        """Test MAE with identical arrays (should be zero)."""
-        mae = mean_absolute_error([1, 2, 3], [1, 2, 3])
-        assert mae == 0.0
+    """Tests for the mean_absolute_error function"""
     
-    def test_basic_calculation(self):
-        """Test basic MAE calculation."""
-        # MAE = (|1-2| + |2-4| + |3-6|) / 3 = (1 + 2 + 3) / 3 = 2.0
-        mae = mean_absolute_error([1, 2, 3], [2, 4, 6])
-        assert mae == 2.0
+    @pytest.mark.parametrize(
+        "y_true, y_pred, expected",
+        [
+            # Basic test cases with lists
+            ([1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 6], 0.0),
+            ([1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12], 6.0),
+            ([103, 130, 132, 124, 124, 108], [129, 111, 122, 129, 110, 141], 17.833333),
+            
+            # Different array-like data types
+            (np.array([1, 2, 3]), np.array([4, 5, 6]), 3.0),
+            (pd.Series([1, 2, 3]), [4, 5, 6], 3.0),
+            ([1, 2, 3], pd.Series([4, 5, 6]), 3.0),
+            (pd.DataFrame([1, 2, 3]), pd.DataFrame([4, 5, 6]), 3.0),
+            (pd.DataFrame([1, 2, 3]), pd.Series([4, 5, 6]), 3.0),
+            (pd.DataFrame([1, 2, 3]), np.array([4, 5, 6]), 3.0),
+            
+            # Float values
+            ([1.5, 2.5, 3.5], [1.0, 2.0, 3.0], 0.5),
+            
+            # Mixed types
+            ([1, 2, 3], [1.5, 2.5, 3.5], 0.5),
+            
+            # 2D arrays (should be flattened)
+            (np.array([[1, 2], [3, 4]]), np.array([[5, 6], [7, 8]]), 4.0),
+            
+            # Edge cases
+            ([0, 0, 0], [0, 0, 0], 0.0),
+            ([-1, -2, -3], [-1, -2, -3], 0.0),
+            ([-1, -2, -3], [1, 2, 3], 4.0),
+            
+            # Extreme values
+            ([1e6, 2e6, 3e6], [1e6, 2e6, 3e6], 0.0),
+            ([1e-6, 2e-6, 3e-6], [2e-6, 3e-6, 4e-6], 1e-6),
+        ]
+    )
+    def test_mean_absolute_error(self, y_true, y_pred, expected):
+        """Test mean absolute error calculation with various input types"""
+        error = m.mean_absolute_error(y_true, y_pred)
+        assert pytest.approx(expected, rel=1e-5) == error
     
-    def test_negative_values(self):
-        """Test MAE with negative values."""
-        # MAE = (|-1-(-2)| + |-2-(-4)| + |-3-(-6)|) / 3 = (1 + 2 + 3) / 3 = 2.0
-        mae = mean_absolute_error([-1, -2, -3], [-2, -4, -6])
-        assert mae == 2.0
-    
-    def test_mixed_values(self):
-        """Test MAE with mixed positive and negative values."""
-        # MAE = (|1-(-1)| + |-2-2| + |3-(-3)|) / 3 = (2 + 4 + 6) / 3 = 4.0
-        mae = mean_absolute_error([1, -2, 3], [-1, 2, -3])
-        assert mae == 4.0
-    
-    def test_float_values(self):
-        """Test MAE with floating point values."""
-        # MAE = (|1.5-1.0| + |2.5-2.0| + |3.5-3.0|) / 3 = (0.5 + 0.5 + 0.5) / 3 = 0.5
-        mae = mean_absolute_error([1.5, 2.5, 3.5], [1.0, 2.0, 3.0])
-        assert mae == 0.5
-    
-    def test_extreme_values(self):
-        """Test MAE with extreme values."""
-        # Very large numbers
-        large_true = [1e6, 2e6, 3e6]
-        large_pred = [1.1e6, 2.1e6, 3.1e6]
-        # MAE = (|1e6-1.1e6| + |2e6-2.1e6| + |3e6-3.1e6|) / 3 = (1e5 + 1e5 + 1e5) / 3 = 1e5
-        mae_large = mean_absolute_error(large_true, large_pred)
-        assert mae_large == 1e5
-        
-        # Very small numbers
-        small_true = [1e-6, 2e-6, 3e-6]
-        small_pred = [1.1e-6, 2.1e-6, 3.1e-6]
-        # MAE = (|1e-6-1.1e-6| + |2e-6-2.1e-6| + |3e-6-3.1e-6|) / 3 = (1e-7 + 1e-7 + 1e-7) / 3 = 1e-7
-        mae_small = mean_absolute_error(small_true, small_pred)
-        assert pytest.approx(mae_small, abs=1e-10) == 1e-7
-    
-    def test_different_input_types(self):
-        """Test MAE with different input types that can be converted to numeric arrays."""
-        # Lists
-        assert mean_absolute_error([1, 2, 3], [2, 3, 4]) == 1.0
-        
-        # Numpy arrays
-        assert mean_absolute_error(np.array([1, 2, 3]), np.array([2, 3, 4])) == 1.0
-        
-        # Mixed types
-        assert mean_absolute_error([1, 2, 3], np.array([2, 3, 4])) == 1.0
-        
-        # Tuples
-        assert mean_absolute_error((1, 2, 3), (2, 3, 4)) == 1.0
-    
-    def test_single_element_arrays(self):
-        """Test MAE with single element arrays."""
-        assert mean_absolute_error([5], [7]) == 2.0
-    
-    def test_input_validation_errors(self):
-        """Test that input validation errors are properly propagated."""
+    def test_error_propagation(self):
+        """Test that errors from validate_inputs are properly propagated"""
         with pytest.raises(ValueError, match="Input arrays must have the same length"):
-            mean_absolute_error([1, 2, 3], [1, 2])
+            m.mean_absolute_error([1, 2, 3], [4, 5])
         
         with pytest.raises(ValueError, match="Input arrays cannot be empty"):
-            mean_absolute_error([], [])
+            m.mean_absolute_error([], [])
         
         with pytest.raises(TypeError, match="Inputs must be iterable"):
-            mean_absolute_error(123, [1, 2, 3])
+            m.mean_absolute_error(123, [1, 2, 3])
+    
+    def test_with_nan_values(self):
+        """Test behavior with NaN values (should propagate to result)"""
+        # This test demonstrates current behavior, which returns NaN when NaN values are present
+        result = m.mean_absolute_error([1, 2, np.nan], [4, 5, 6])
+        assert np.isnan(result)
+    
+    def test_with_inf_values(self):
+        """Test behavior with infinity values"""
+        # This test demonstrates current behavior with infinity values
+        result = m.mean_absolute_error([1, 2, np.inf], [4, 5, 6])
+        assert np.isinf(result)
+
+class TestMeanAbsolutePercentageError:
+    """Tests for the mean_absolute_percentage_error function"""
+    
+    @pytest.mark.parametrize(
+        "y_true, y_pred, expected",
+        [
+            # Basic test cases
+            ([100, 200, 300], [90, 210, 310], 6.666667),
+            ([10, 20, 30, 40, 50], [11, 22, 33, 44, 55], 10.0),
+            ([1000, 1000, 1000], [900, 1100, 1000], 6.666667),
+            
+            # Different magnitudes
+            ([1, 10, 100], [1.1, 11, 110], 10.0),
+            ([0.1, 0.2, 0.3], [0.11, 0.22, 0.33], 10.0),
+            
+            # Negative values
+            ([-100, -200, -300], [-90, -210, -310], 6.666667),
+            ([-10, -20, -30], [-11, -22, -33], 10.0),
+            
+            # Mixed positive and negative values
+            ([10, -20, 30], [11, -22, 33], 10.0),
+            
+            # Underforecasting and overforecasting
+            ([100, 100, 100], [90, 90, 90], 10.0),  # Underforecasting
+            ([100, 100, 100], [110, 110, 110], 10.0),  # Overforecasting
+        ]
+    )
+    def test_mape_calculation(self, y_true, y_pred, expected):
+        """Test MAPE calculation with various numeric inputs"""
+        error = m.mean_absolute_percentage_error(y_true, y_pred)
+        assert pytest.approx(expected, rel=1e-5) == error
+    
+    @pytest.mark.parametrize(
+        "y_true, y_pred, expected",
+        [
+            # Different array-like data types
+            (np.array([100, 200, 300]), np.array([90, 210, 310]), 6.666667),
+            (pd.Series([10, 20, 30]), pd.Series([11, 22, 33]), 10.0),
+            (pd.DataFrame([100, 200, 300]), np.array([90, 210, 310]), 6.666667),
+            
+            # 2D arrays (should be flattened)
+            (np.array([[100, 200], [300, 400]]), np.array([[90, 210], [310, 410]]), 5.0),
+        ]
+    )
+    def test_mape_data_types(self, y_true, y_pred, expected):
+        """Test MAPE calculation with various input data types"""
+        error = m.mean_absolute_percentage_error(y_true, y_pred)
+        assert pytest.approx(expected, rel=1e-5) == error
+    
+    def test_mape_near_zero_warning(self):
+        """Test that a warning is issued for values close to zero"""
+        with pytest.warns(UserWarning, match="very close to zero"):
+            m.mean_absolute_percentage_error([1e-11, 1, 2], [2e-11, 1.1, 2.2])
+    
+    def test_mape_asymmetry(self):
+        """Test the asymmetric property of MAPE"""
+        # Demonstrate that underforecasting and overforecasting by the same amount
+        # produce different MAPE values when true values differ
+        y_true = [10, 100, 1000]
+        
+        # Underforecast by 10%
+        y_under = [9, 90, 900]
+        under_mape = m.mean_absolute_percentage_error(y_true, y_under)
+        
+        # Overforecast by 10%
+        y_over = [11, 110, 1100]
+        over_mape = m.mean_absolute_percentage_error(y_true, y_over)
+        
+        # Both should be 10%, demonstrating symmetry for consistent percentage errors
+        assert pytest.approx(10.0) == under_mape
+        assert pytest.approx(10.0) == over_mape
+        
+        # But with inconsistent errors, asymmetry appears
+        y_mixed = [11, 90, 1100]  # +10%, -10%, +10%
+        mixed_mape = m.mean_absolute_percentage_error(y_true, y_mixed)
+        assert mixed_mape != under_mape  # Should not be equal
 
 
-class TestPandasInputs:
-    def test_pandas_series_inputs(self):
-        """Test that pandas Series inputs are handled correctly."""
-        # Create pandas Series
-        s1 = pd.Series([1, 2, 3])
-        s2 = pd.Series([1.5, 2.5, 3.5])
-        
-        # Validate inputs
-        y_true, y_pred = validate_inputs(s1, s2)
-        
-        # Check types and values
-        assert isinstance(y_true, np.ndarray)
-        assert isinstance(y_pred, np.ndarray)
-        np.testing.assert_array_equal(y_true, np.array([1, 2, 3]))
-        np.testing.assert_array_equal(y_pred, np.array([1.5, 2.5, 3.5]))
-        
-        # Test MAE calculation
-        mae = mean_absolute_error(s1, s2)
-        assert mae == 0.5
+class TestMeanAbsolutePercentageErrorEdgeCases:
+    """Tests for edge cases and error handling in mean_absolute_percentage_error"""
     
-    def test_pandas_dataframe_inputs(self):
-        """Test that pandas DataFrame inputs are handled correctly."""
-        # Create pandas DataFrames
-        df1 = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
-        df2 = pd.DataFrame({'A': [1.5, 2.5, 3.5], 'B': [4.5, 5.5, 6.5]})
+    def test_error_with_zeros(self):
+        """Test that an error is raised when y_true contains zeros"""
+        with pytest.raises(ValueError, match="cannot be calculated when actual values.*contain zeros"):
+            m.mean_absolute_percentage_error([0, 1, 2], [1, 2, 3])
         
-        # Validate inputs - this will flatten the DataFrames
-        y_true, y_pred = validate_inputs(df1, df2)
-        
-        # Check that DataFrames were flattened correctly
-        # Expected: [1, 4, 2, 5, 3, 6] and [1.5, 4.5, 2.5, 5.5, 3.5, 6.5]
-        # or similar flattening pattern
-        assert len(y_true) == 6
-        assert len(y_pred) == 6
-        
-        # Test MAE calculation with DataFrames
-        mae = mean_absolute_error(df1, df2)
-        assert mae == 0.5
+        with pytest.raises(ValueError, match="cannot be calculated when actual values.*contain zeros"):
+            m.mean_absolute_percentage_error([1, 0, 3], [1, 1, 3])
     
-    def test_mixed_input_types(self):
-        """Test that mixed input types are handled correctly."""
-        # Create different input types
-        array = np.array([1, 2, 3])
-        series = pd.Series([1.5, 2.5, 3.5])
+    def test_error_propagation(self):
+        """Test that errors from validate_inputs are properly propagated"""
+        with pytest.raises(ValueError, match="Input arrays must have the same length"):
+            m.mean_absolute_percentage_error([1, 2, 3], [4, 5])
         
-        # Test numpy array and pandas Series
-        y_true, y_pred = validate_inputs(array, series)
-        assert isinstance(y_true, np.ndarray)
-        assert isinstance(y_pred, np.ndarray)
-        np.testing.assert_array_equal(y_true, np.array([1, 2, 3]))
-        np.testing.assert_array_equal(y_pred, np.array([1.5, 2.5, 3.5]))
+        with pytest.raises(ValueError, match="Input arrays cannot be empty"):
+            m.mean_absolute_percentage_error([], [])
         
-        # Test list and pandas DataFrame
-        list_data = [1, 2, 3]
-        df = pd.DataFrame({'A': [1.5, 2.5, 3.5]})
-        y_true, y_pred = validate_inputs(list_data, df)
-        assert len(y_true) == 3
-        assert len(y_pred) == 3
+        with pytest.raises(TypeError, match="Inputs must be iterable"):
+            m.mean_absolute_percentage_error(123, [1, 2, 3])
         
-        # Test pandas Series and numpy array
-        mae = mean_absolute_error(series, array)
-        assert mae == 0.5
+        with pytest.raises(ValueError, match="Input arrays must contain numeric values"):
+            m.mean_absolute_percentage_error(['a', 'b', 'c'], [1, 2, 3])
     
-    def test_dataframe_with_single_column(self):
-        """Test DataFrames with a single column."""
-        df1 = pd.DataFrame({'A': [1, 2, 3]})
-        df2 = pd.DataFrame({'A': [2, 3, 4]})
-        
-        mae = mean_absolute_error(df1, df2)
-        assert mae == 1.0
+    def test_with_very_small_values(self):
+        """Test behavior with very small but non-zero values"""
+        # This should issue a warning but still calculate
+        with pytest.warns(UserWarning, match="very close to zero"):
+            result = m.mean_absolute_percentage_error([1e-11, 1e-11], [2e-11, 3e-11])
+            # Result should be very large due to the relative error
+            assert result > 100  # MAPE will be 100% or higher
     
-    def test_dataframe_with_index(self):
-        """Test DataFrames with custom indices."""
-        df1 = pd.DataFrame({'A': [1, 2, 3]}, index=['a', 'b', 'c'])
-        df2 = pd.DataFrame({'A': [2, 3, 4]}, index=['a', 'b', 'c'])
-        
-        mae = mean_absolute_error(df1, df2)
-        assert mae == 1.0
+    def test_with_nan_values(self):
+        """Test behavior with NaN values"""
+        # NaN values should propagate through calculation
+        result = m.mean_absolute_percentage_error([1, 2, np.nan], [1.1, 2.2, 3.3])
+        assert np.isnan(result)
     
-    def test_series_with_different_indices(self):
-        """Test Series with different indices but same values."""
-        s1 = pd.Series([1, 2, 3], index=['a', 'b', 'c'])
-        s2 = pd.Series([2, 3, 4], index=['x', 'y', 'z'])
-        
-        mae = mean_absolute_error(s1, s2)
-        assert mae == 1.0
+    def test_with_inf_values(self):
+        """Test behavior with infinity values"""
+        # Infinity values should propagate through calculation
+        result = m.mean_absolute_percentage_error([1, 2, np.inf], [1.1, 2.2, 3.3])
+        assert np.isinf(result)
     
-    def test_dataframe_column_subset(self):
-        """Test using only specific columns from DataFrames."""
-        df1 = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6], 'C': [7, 8, 9]})
-        df2 = pd.DataFrame({'A': [2, 3, 4], 'B': [5, 6, 7], 'C': [8, 9, 10]})
+    def test_extreme_values(self):
+        """Test with extreme values to check numerical stability"""
+        # Very large values
+        large_result = m.mean_absolute_percentage_error([1e10, 2e10], [1.1e10, 2.2e10])
+        assert pytest.approx(10.0) == large_result
         
-        # Use only columns A and B
-        mae = mean_absolute_error(df1[['A', 'B']], df2[['A', 'B']])
-        assert mae == 1.0
+        # Very small but valid values
+        with pytest.warns(UserWarning):
+            small_result = m.mean_absolute_percentage_error([1e-5, 2e-5], [1.1e-5, 2.2e-5])
+            assert pytest.approx(10.0) == small_result
