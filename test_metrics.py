@@ -1,55 +1,175 @@
 import pytest
 import numpy as np
+import pandas as pd
+import warnings
 from metrics import validate_inputs
 
-def test_non_iterable_inputs():
-    """Test that function fails when inputs are not iterable"""
-    # Test with integer for y_true
-    with pytest.raises(TypeError, match="Inputs must be iterable"):
-        validate_inputs(42, [1, 2, 3])
+class TestValidateInputsDirty:
     
-    # Test with None for y_pred
-    with pytest.raises(TypeError, match="Inputs must be iterable"):
-        validate_inputs([1, 2, 3], None)
+    def test_different_length_arrays(self):
+        """Test that validate_inputs raises ValueError when arrays have different lengths."""
+        y_true = [1, 2, 3, 4]
+        y_pred = [1, 2, 3]
+        with pytest.raises(ValueError, match="Input arrays must have the same length"):
+            validate_inputs(y_true, y_pred)
     
-    # Test with both non-iterables
-    with pytest.raises(TypeError, match="Inputs must be iterable"):
-        validate_inputs(42, 3.14)
-
-def test_non_convertible_inputs():
-    """Test that function fails when inputs can't be converted to numeric arrays"""
-    # Test with non-numeric elements
-    with pytest.raises(ValueError, match="Input arrays must contain numeric values"):
-        validate_inputs([1, 2, "three"], [1, 2, 3])
+    def test_empty_arrays(self):
+        """Test that validate_inputs raises ValueError when arrays are empty."""
+        y_true = []
+        y_pred = []
+        with pytest.raises(ValueError, match="Input arrays cannot be empty"):
+            validate_inputs(y_true, y_pred)
     
-    # Test with mixed types that can't be converted properly
-    with pytest.raises(ValueError, match="Input arrays must contain numeric values"):
-        validate_inputs([1, 2, [3]], [1, 2, 3])
-
-def test_mismatched_array_lengths():
-    """Test that function fails when input arrays have different lengths"""
-    with pytest.raises(ValueError, match="Input arrays must have the same length"):
-        validate_inputs([1, 2, 3], [1, 2, 3, 4])
-
-def test_empty_arrays():
-    """Test that function fails when input arrays are empty"""
-    with pytest.raises(ValueError, match="Input arrays cannot be empty"):
-        validate_inputs([], [])
-
-def test_arrays_with_nan_inf():
-    """Test that function handles NaN and Inf values"""
-    # The function doesn't explicitly check for NaN/Inf, so these should pass validation
-    # but we should verify the behavior
-    y_true = [1, 2, np.nan, 4]
-    y_pred = [1, np.inf, 3, 4]
+    def test_string_inputs(self):
+        """Test that validate_inputs raises TypeError when string inputs are provided."""
+        y_true = "not an array"
+        y_pred = [1, 2, 3]
+        with pytest.raises(TypeError, match="String inputs are not supported"):
+            validate_inputs(y_true, y_pred)
     
-    # This should pass validation but might cause issues in calculations
-    y_true_arr, y_pred_arr = validate_inputs(y_true, y_pred)
-    assert np.isnan(y_true_arr[2])
-    assert np.isinf(y_pred_arr[1])
+    def test_non_numeric_values(self):
+        """Test that validate_inputs raises ValueError when arrays contain non-numeric values."""
+        y_true = [1, 2, "three", 4]
+        y_pred = [1, 2, 3, 4]
+        with pytest.raises(ValueError, match="Failed to convert y_true to float array"):
+            validate_inputs(y_true, y_pred)
+    
+    def test_nan_values(self):
+        """Test that validate_inputs raises ValueError when arrays contain NaN values."""
+        y_true = [1, 2, np.nan, 4]
+        y_pred = [1, 2, 3, 4]
+        with pytest.raises(ValueError, match="Input arrays contain NaN values"):
+            validate_inputs(y_true, y_pred)
+    
+    def test_infinity_values(self):
+        """Test that validate_inputs raises ValueError when arrays contain infinity values."""
+        y_true = [1, 2, np.inf, 4]
+        y_pred = [1, 2, 3, 4]
+        with pytest.raises(ValueError, match="Input arrays contain infinity values"):
+            validate_inputs(y_true, y_pred)
+    
+    def test_warning_all_zeros_true(self):
+        """Test that validate_inputs warns when all y_true values are zero."""
+        y_true = [0, 0, 0, 0]
+        y_pred = [1, 2, 3, 4]
+        with pytest.warns(UserWarning, match="All values in y_true are zero"):
+            validate_inputs(y_true, y_pred)
+    
+    def test_warning_all_zeros_pred(self):
+        """Test that validate_inputs warns when all y_pred values are zero."""
+        y_true = [1, 2, 3, 4]
+        y_pred = [0, 0, 0, 0]
+        with pytest.warns(UserWarning, match="All values in y_pred are zero"):
+            validate_inputs(y_true, y_pred)
+    
+    def test_warning_large_differences(self):
+        """Test that validate_inputs warns when there are very large differences between arrays."""
+        y_true = [1, 2, 3, 4]
+        y_pred = [1, 2, 3, 1e7]
+        with pytest.warns(UserWarning, match="Very large differences detected"):
+            validate_inputs(y_true, y_pred)
+    
+    def test_warning_multidimensional_array(self):
+        """Test that validate_inputs warns when a multi-dimensional array is provided."""
+        y_true = np.array([[1, 2], [3, 4], [5, 6]])  # Flattens to 6 elements
+        y_pred = [1, 2, 3, 4, 5, 6]  # Now has 6 elements
+        with pytest.warns(UserWarning, match="Multi-dimensional array provided"):
+            validate_inputs(y_true, y_pred)
 
-def test_nested_iterables():
-    """Test that function handles nested iterables"""
-    # Nested lists that can't be properly flattened to 1D
-    with pytest.raises(ValueError):
-        validate_inputs([[1, 2], [3, 4]], [[1, 2], [3, 4]])
+
+class TestValidateInputsFunctionality:
+    
+    def test_list_inputs(self):
+        """Test validate_inputs with basic list inputs."""
+        y_true = [1, 2, 3, 4]
+        y_pred = [2, 3, 4, 5]
+        y_true_arr, y_pred_arr = validate_inputs(y_true, y_pred)
+        
+        # Check output types
+        assert isinstance(y_true_arr, np.ndarray)
+        assert isinstance(y_pred_arr, np.ndarray)
+        
+        # Check values
+        np.testing.assert_array_equal(y_true_arr, np.array([1, 2, 3, 4]))
+        np.testing.assert_array_equal(y_pred_arr, np.array([2, 3, 4, 5]))
+    
+    def test_numpy_array_inputs(self):
+        """Test validate_inputs with numpy array inputs."""
+        y_true = np.array([1, 2, 3, 4])
+        y_pred = np.array([2, 3, 4, 5])
+        y_true_arr, y_pred_arr = validate_inputs(y_true, y_pred)
+        
+        np.testing.assert_array_equal(y_true_arr, np.array([1, 2, 3, 4]))
+        np.testing.assert_array_equal(y_pred_arr, np.array([2, 3, 4, 5]))
+    
+    def test_pandas_series_inputs(self):
+        """Test validate_inputs with pandas Series inputs."""
+        y_true = pd.Series([1, 2, 3, 4])
+        y_pred = pd.Series([2, 3, 4, 5])
+        y_true_arr, y_pred_arr = validate_inputs(y_true, y_pred)
+        
+        np.testing.assert_array_equal(y_true_arr, np.array([1, 2, 3, 4]))
+        np.testing.assert_array_equal(y_pred_arr, np.array([2, 3, 4, 5]))
+    
+    def test_pandas_dataframe_inputs(self):
+        """Test validate_inputs with pandas DataFrame inputs (single column)."""
+        y_true = pd.DataFrame({'value': [1, 2, 3, 4]})
+        y_pred = pd.DataFrame({'value': [2, 3, 4, 5]})
+        y_true_arr, y_pred_arr = validate_inputs(y_true, y_pred)
+        
+        np.testing.assert_array_equal(y_true_arr, np.array([1, 2, 3, 4]))
+        np.testing.assert_array_equal(y_pred_arr, np.array([2, 3, 4, 5]))
+    
+    def test_scalar_inputs(self):
+        """Test validate_inputs with scalar inputs."""
+        y_true = 5
+        y_pred = 7
+        y_true_arr, y_pred_arr = validate_inputs(y_true, y_pred)
+        
+        np.testing.assert_array_equal(y_true_arr, np.array([5]))
+        np.testing.assert_array_equal(y_pred_arr, np.array([7]))
+    
+    def test_mixed_inputs(self):
+        """Test validate_inputs with mixed input types."""
+        y_true = [1, 2, 3, 4]
+        y_pred = pd.Series([2, 3, 4, 5])
+        y_true_arr, y_pred_arr = validate_inputs(y_true, y_pred)
+        
+        np.testing.assert_array_equal(y_true_arr, np.array([1, 2, 3, 4]))
+        np.testing.assert_array_equal(y_pred_arr, np.array([2, 3, 4, 5]))
+    
+    def test_multidimensional_array_flattening(self):
+        """Test validate_inputs correctly flattens multi-dimensional arrays."""
+        y_true = np.array([[1, 2], [3, 4]])
+        y_pred = np.array([1, 2, 3, 4])
+        
+        with pytest.warns(UserWarning, match="Multi-dimensional array provided"):
+            y_true_arr, y_pred_arr = validate_inputs(y_true, y_pred)
+        
+        np.testing.assert_array_equal(y_true_arr, np.array([1, 2, 3, 4]))
+        np.testing.assert_array_equal(y_pred_arr, np.array([1, 2, 3, 4]))
+    
+    def test_multidimensional_dataframe_flattening(self):
+        """Test validate_inputs correctly flattens multi-dimensional DataFrames."""
+        y_true = pd.DataFrame({'a': [1, 2], 'b': [3, 4]})
+        y_pred = np.array([1, 2, 3, 4])
+        
+        with pytest.warns(UserWarning, match="Multi-dimensional DataFrame provided"):
+            y_true_arr, y_pred_arr = validate_inputs(y_true, y_pred)
+        
+        # The exact order depends on how pandas flattens the DataFrame
+        assert set(y_true_arr) == {1, 2, 3, 4}
+        np.testing.assert_array_equal(y_pred_arr, np.array([1, 2, 3, 4]))
+    
+    def test_float_conversion(self):
+        """Test validate_inputs correctly converts values to float."""
+        y_true = [1, 2, 3, 4]
+        y_pred = ["2.0", "3.0", "4.0", "5.0"]  # String numbers should convert to float
+        y_true_arr, y_pred_arr = validate_inputs(y_true, y_pred)
+        
+        np.testing.assert_array_equal(y_true_arr, np.array([1.0, 2.0, 3.0, 4.0]))
+        np.testing.assert_array_equal(y_pred_arr, np.array([2.0, 3.0, 4.0, 5.0]))
+        
+        # Check that the dtype is float
+        assert y_true_arr.dtype == np.float64
+        assert y_pred_arr.dtype == np.float64
