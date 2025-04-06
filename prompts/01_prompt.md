@@ -11,7 +11,7 @@ To generate tests a user will provide the name of the function or class they wis
 2. "edge" - Test extreme value and edge cases
 3. "dirty" - Test that code fails as expected with certain values
 
-For example a user may specify "foo functionality" where `foo` is the name of the test and `functionality` is the type of unit tests to create.
+For example a user may specify "foo functionality" where `foo` is the name of the function to test and `functionality` is the type of unit tests to create.
 
 By default you will design the tests. But a user may optionality provide their test cases. A user may also issue the "restrict" command to limit testing to the tests they have specified. 
 
@@ -20,8 +20,6 @@ A user may also specify the "suggest" command.  When this is included provide a 
 For the type of unit test selected:
 1. Separate out tests that you know will fail based on your defensive programming analysis.
 2. Provide a summary  of what the tests are doing and how.  
-
-
 
 Tests should be organised and easy for a user to understand. 
 

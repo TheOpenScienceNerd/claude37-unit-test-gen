@@ -10,8 +10,9 @@ import numpy.typing as npt
 from typing import Tuple
 
 def validate_inputs(
-    y_true: npt.ArrayLike, y_pred: npt.ArrayLike
-) -> Tuple[np.ndarray, np.ndarray]:
+    y_true: npt.ArrayLike | int | float,
+    y_pred: npt.ArrayLike | int | float
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Returns ground truth and predictions values as numpy arrays with enhanced validation.
 
@@ -116,8 +117,10 @@ def validate_inputs(
     return y_true_arr, y_pred_arr
 
 
-
-def mean_absolute_error(y_true: npt.ArrayLike, y_pred: npt.ArrayLike) -> float:
+def mean_absolute_error(
+        y_true: npt.ArrayLike | int | float, 
+        y_pred: npt.ArrayLike | int | float
+) -> float:
     """
     Mean Absolute Error (MAE)
 
