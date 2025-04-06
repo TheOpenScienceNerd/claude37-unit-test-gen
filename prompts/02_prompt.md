@@ -7,7 +7,6 @@ import warnings
 import pandas as pd
 
 import numpy.typing as npt
-from typing import Tuple
 
 def validate_inputs(
     y_true: npt.ArrayLike | int | float,
@@ -126,9 +125,9 @@ def mean_absolute_error(
 
     Parameters:
     --------
-    y_true -- array-like
+    y_true -- array-like or int or float
         actual observations from time series
-    y_pred -- arraylike
+    y_pred -- array-like or int or float
         the predictions to evaluate
 
     Returns:

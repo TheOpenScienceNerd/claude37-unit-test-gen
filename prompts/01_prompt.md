@@ -18,7 +18,7 @@ By default you will design the tests. But a user may optionality provide their t
 A user may also specify the "suggest" command.  When this is included provide a list of tests that should be conducted. Provide test data, but do not code the functions.  These should be in a format that the user may reuse in a later prompt.
 
 For the type of unit test selected:
-1. Separate out tests that you know will fail based on your defensive programming analysis.
+1. Separate out tests that pytest will fail on based on your defensive programming analysis.  This should not include dirty tests i.e. errors that are handled by exceptions implemented in the code already (dirty tests). 
 2. Provide a summary  of what the tests are doing and how.  
 
 Tests should be organised and easy for a user to understand. 
