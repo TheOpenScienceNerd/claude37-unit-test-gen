@@ -14,15 +14,14 @@ import warnings
 import pandas as pd
 import numpy.typing as npt
 
-
-def _normalize_array_input(arr: npt.ArrayLike | int | float, name: str) -> np.ndarray:
+def _convert_to_array(arr, name: str) -> np.ndarray:
     """
-    Normalize various input types to a 1D numpy array with validation.
+    Convert various input types to a 1D numpy array.
     
     Parameters:
     ----------
     arr : array-like or scalar
-        The input to normalize (DataFrame, Series, array, list, or scalar)
+        The input to convert (DataFrame, Series, array, list, or scalar)
     name : str
         Name of the input for error messages
         
@@ -38,7 +37,7 @@ def _normalize_array_input(arr: npt.ArrayLike | int | float, name: str) -> np.nd
     ValueError
         If input contains non-numeric values
     """
-    # Check for multi-dimensional inputs and warn before processing
+    # Check for multi-dimensional inputs and warn
     if isinstance(arr, pd.DataFrame) and arr.shape[1] > 1:
         warnings.warn(
             f"Multi-dimensional DataFrame provided for {name} with shape {arr.shape}. "
@@ -46,7 +45,6 @@ def _normalize_array_input(arr: npt.ArrayLike | int | float, name: str) -> np.nd
             UserWarning
         )
     
-    # Check for numpy arrays that are multi-dimensional
     if isinstance(arr, np.ndarray) and arr.ndim > 1:
         warnings.warn(
             f"Multi-dimensional array provided for {name} with shape {arr.shape}. "
@@ -54,11 +52,10 @@ def _normalize_array_input(arr: npt.ArrayLike | int | float, name: str) -> np.nd
             UserWarning
         )
     
-    # Handle pandas DataFrame, Series, or scalar values
+    # Handle different input types
     if isinstance(arr, (pd.DataFrame, pd.Series)):
         arr = arr.to_numpy()
     elif not hasattr(arr, "__iter__") or isinstance(arr, (int, float)):
-        # Handle scalar values
         arr = np.asarray([arr], dtype=float)
  
     # String checking
@@ -66,13 +63,57 @@ def _normalize_array_input(arr: npt.ArrayLike | int | float, name: str) -> np.nd
         raise TypeError(f"String inputs are not supported: {arr}")
 
     try:
-        arr_processed = np.asarray(arr, dtype=float).flatten()
+        return np.asarray(arr, dtype=float).flatten()
     except TypeError as e:
         raise TypeError(f"Cannot convert {name} to numeric array: {arr} - {str(e)}") from e
     except ValueError as e:
         raise ValueError(f"Failed to convert {name} to float array. Input contains non-numeric values: {str(e)}") from e
+
+def _validate_single_array(arr: np.ndarray, name: str) -> np.ndarray:
+    """
+    Validate a single array for numeric content and basic quality.
+    
+    Parameters:
+    ----------
+    arr : np.ndarray
+        The array to validate
+    name : str
+        Name of the array for error messages
         
-    return arr_processed
+    Returns:
+    -------
+    np.ndarray
+        The validated array (unchanged)
+        
+    Raises:
+    ------
+    ValueError
+        If array is empty, contains NaN, infinity values, or boolean values
+    """
+    # Check for empty arrays
+    if len(arr) == 0:
+        raise ValueError(f"{name} cannot be empty")
+
+    # Check for boolean arrays
+    if arr.dtype == bool or np.issubdtype(arr.dtype, np.bool_):
+        raise ValueError(f"{name} contains boolean values. Please convert to numeric values (0 and 1) explicitly if intended.")
+    
+    # Check for NaN and infinity values
+    if np.isnan(arr).any():
+        raise ValueError(f"{name} contains NaN values")
+    
+    if np.isinf(arr).any():
+        raise ValueError(f"{name} contains infinity values")
+    
+    # Check for zero arrays
+    if np.all(arr == 0):
+        warnings.warn(
+            f"All values in {name} are zero, which may cause issues in percentage-based metrics",
+            UserWarning
+        )
+    
+    return arr
+
 
 
 def _validate_inputs(
@@ -97,42 +138,23 @@ def _validate_inputs(
     Raises:
     ------
     ValueError
-        If inputs cannot be converted to arrays, have different lengths,
-        are empty, contain non-numeric values, or contain NaN/inf values
+        If inputs have different lengths, are empty, contain invalid values
     TypeError
         If inputs cannot be converted to numeric types
     """
-    # Process both arrays using the helper function
-    y_true_arr = _normalize_array_input(y_true, "y_true")
-    y_pred_arr = _normalize_array_input(y_pred, "y_pred")
+    # Step 1: Convert inputs to arrays
+    y_true_arr = _convert_to_array(y_true, "y_true")
+    y_pred_arr = _convert_to_array(y_pred, "y_pred")
 
-    # Check array lengths
+    # Step 2: Validate each array individually
+    y_true_arr = _validate_single_array(y_true_arr, "y_true")
+    y_pred_arr = _validate_single_array(y_pred_arr, "y_pred")
+
+    # Step 3: Perform pair-wise validations
+    # check for same dimensions
     if len(y_true_arr) != len(y_pred_arr):
         raise ValueError(
             f"Input arrays must have the same length. Got {len(y_true_arr)} and {len(y_pred_arr)}"
-        )
-
-    if len(y_true_arr) == 0:
-        raise ValueError("Input arrays cannot be empty")
-
-    # Check for NaN and infinity values
-    if np.isnan(y_true_arr).any() or np.isnan(y_pred_arr).any():
-        raise ValueError("Input arrays contain NaN values")
-    
-    if np.isinf(y_true_arr).any() or np.isinf(y_pred_arr).any():
-        raise ValueError("Input arrays contain infinity values")
-    
-    # Check for zero arrays - that might indicate errors
-    if np.all(y_true_arr == 0):
-        warnings.warn(
-            "All values in y_true are zero, which may cause issues in percentage-based metrics",
-            UserWarning
-        )
-    
-    if np.all(y_pred_arr == 0):
-        warnings.warn(
-            "All values in y_pred are zero, which may indicate a problem with the prediction model",
-            UserWarning
         )
         
     # Check for very large differences that might indicate errors
@@ -143,6 +165,7 @@ def _validate_inputs(
         )
 
     return y_true_arr, y_pred_arr
+
 
 
 
