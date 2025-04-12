@@ -1,1 +1,1 @@
-validate_inputs dirty
+_validate_single_array dirty

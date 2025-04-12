@@ -1,1 +1,1 @@
-validate_inputs functionality
+mean_absolute_error edge
