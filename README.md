@@ -24,7 +24,9 @@ If you reuse any of the code, or the tutorial helps you work, please provide a c
 author = {Monks, Thomas},
 license = {MIT},
 title = {{TheOpenScienceNerd - Generating Python Unit-Tests using Claude 3.7 Sonnet}},
-url = {https://github.com/TheOpenScienceNerd/tosn_python_template}
+url = {https://github.com/TheOpenScienceNerd/tosn_python_template},
+publisher    = {Zenodo},
+doi          = {10.5281/zenodo.15206902},
 }
 ```
 
