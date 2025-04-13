@@ -1,5 +1,6 @@
 [![ORCID: Monks](https://img.shields.io/badge/Tom_Monks_ORCID-0000--0003--2631--4481-brightgreen)](https://orcid.org/0000-0003-2631-4481)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15206902.svg)](https://doi.org/10.5281/zenodo.15206902)
 
 # Generating Python Unit-Tests using Claude 3.7 Sonnet.
 
