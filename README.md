@@ -22,7 +22,7 @@ If you reuse any of the code, or the tutorial helps you work, please provide a c
 @software{TheOpenScienceNerd_Template_
 author = {Monks, Thomas},
 license = {MIT},
-title = {{TheOpenScienceNerd - [INSERT TITLE]}},
+title = {{TheOpenScienceNerd - Generating Python Unit-Tests using Claude 3.7 Sonnet}},
 url = {https://github.com/TheOpenScienceNerd/tosn_python_template}
 }
 ```
