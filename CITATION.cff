@@ -2,7 +2,7 @@
 # Visit https://bit.ly/cffinit to generate yours today!
 
 cff-version: 1.2.0
-title: TheOpenScienceNerd - Python Repo Template
+title: TheOpenScienceNerd - Generating Python Unit-Tests using Claude 3.7 Sonnet
 message: >-
   If you use this software, please cite it using the
   metadata from this file.
@@ -12,8 +12,11 @@ authors:
     family-names: Monks
     affiliation: University of Exeter
     orcid: 'https://orcid.org/0000-0003-2631-4481'
-repository-code: 'https://github.com/TheOpenScienceNerd/tosn_python_template'
+repository-code: 'https://github.com/TheOpenScienceNerd/claude37-unit-test-gen'
 keywords:
   - python
   - open science
+  - ClaudeAI
+  - Unit Testing
+  - pytest
 license: MIT
