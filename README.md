@@ -20,7 +20,7 @@ The materials have been made available under an [MIT license](LICENCE).  The mat
 If you reuse any of the code, or the tutorial helps you work, please provide a citation.
 
 ```bibtex
-@software{TheOpenScienceNerd_Template_
+@software{TheOpenScienceNerd_Claude_UnitTests,
 author = {Monks, Thomas},
 license = {MIT},
 title = {{TheOpenScienceNerd - Generating Python Unit-Tests using Claude 3.7 Sonnet}},
