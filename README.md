@@ -1,15 +1,15 @@
 [![ORCID: Monks](https://img.shields.io/badge/Tom_Monks_ORCID-0000--0003--2631--4481-brightgreen)](https://orcid.org/0000-0003-2631-4481)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-# Title
+# Generating Python Unit-Tests using Claude 3.7 Sonnet.
 
-🎓 This tutorial aims to [INSERT].  By following the tutorial you will:
+🎓 This tutorial aims provides an example generic system prompt for Claude 3.7 to support unit-testing in python.  By following the tutorial you will:
 
-* ✅ Gain ...
-* ✅ Understand ...
-* ✅ Build ...
-* 🎁 **Bonus**: ...
-* 
+* ✅ Gain an understanding of system prompting
+* ✅ Understand different types of unit tests that can be generated
+* ✅ Learn how to limit the number of tests generated to allow for human-in-the-loop checking
+
+
 ## License
 
 The materials have been made available under an [MIT license](LICENCE).  The materials are as-is with no liability for the author. Please provide credit if you reuse the code in your own work.
@@ -44,14 +44,9 @@ mamba env create -f binder/environment.yml
 Activate the mamba environment using the following command:
 
 ```bash
-mamba activate [INSERT]
+mamba activate unit_test
 ```
 
-Run Jupyter-lab
-
-```bash
-jupyter-lab
-```
 
 ## Repo overview
 
@@ -59,13 +54,21 @@ jupyter-lab
 .
 ├── binder
 │   └── environment.yml
+├── prompts
+│   └── 01_prompt.md
+│   └── ...
 ├── CHANGELOG.md
 ├── CITATION.cff
 ├── LICENSE
+├── metrics.py
+├── test_metrics.py
 └── README.md
 ```
 
-* `binder/environment.yml` - contains the conda environment if you wish to work the models.
+* `binder/environment.yml` - contains the conda environment if you wish to run the unit-tests
+* `prompts` - directory containing prompts including example system prompt
+* `metrics.py` - example code to test
+* `test_metrics.py` - example unit tests for `metrics.py`
 * `CHANGES.md` - changelog with record of notable changes to project between versions.
 * `CITATION.cff` - citation information for the code.
 * `LICENSE` - details of the MIT permissive license of this work.
